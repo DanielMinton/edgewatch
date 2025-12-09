@@ -1,0 +1,115 @@
+<% content_for :title, @alert.title %>
+
+<div class="mb-6">
+  <%= link_to alerts_path, class: "text-sm text-gray-500 hover:text-gray-700" do %>
+    <span class="inline-flex items-center">
+      <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Back to Alerts
+    </span>
+  <% end %>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+  <div class="px-4 py-5 sm:px-6 flex items-center justify-between">
+    <div class="flex items-center">
+      <% severity_bg = case @alert.severity
+                       when "critical" then "bg-red-100"
+                       when "error" then "bg-orange-100"
+                       when "warning" then "bg-yellow-100"
+                       else "bg-blue-100"
+                       end %>
+      <% severity_text = case @alert.severity
+                         when "critical" then "text-red-600"
+                         when "error" then "text-orange-600"
+                         when "warning" then "text-yellow-600"
+                         else "text-blue-600"
+                         end %>
+      <div class="h-12 w-12 rounded-full <%= severity_bg %> flex items-center justify-center">
+        <svg class="h-6 w-6 <%= severity_text %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="ml-4">
+        <h3 class="text-lg leading-6 font-medium text-gray-900"><%= @alert.title %></h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500"><%= @alert.category.humanize %></p>
+      </div>
+    </div>
+    <div class="flex space-x-3">
+      <% unless @alert.is_resolved? %>
+        <% if @alert.is_active? %>
+          <%= button_to "Acknowledge", acknowledge_alert_path(@alert), method: :patch, class: "inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500" %>
+        <% end %>
+        <%= button_to "Resolve", resolve_alert_path(@alert), method: :patch, class: "inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500" %>
+      <% end %>
+    </div>
+  </div>
+  <div class="border-t border-gray-200">
+    <dl>
+      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm font-medium text-gray-500">Edge Site</dt>
+        <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <%= link_to @alert.edge_site.name, @alert.edge_site, class: "text-red-600 hover:text-red-500" %>
+        </dd>
+      </div>
+      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm font-medium text-gray-500">Severity</dt>
+        <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <% severity_badge = case @alert.severity
+                              when "critical" then "bg-red-100 text-red-800"
+                              when "error" then "bg-orange-100 text-orange-800"
+                              when "warning" then "bg-yellow-100 text-yellow-800"
+                              else "bg-blue-100 text-blue-800"
+                              end %>
+          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= severity_badge %>">
+            <%= @alert.severity.humanize %>
+          </span>
+        </dd>
+      </div>
+      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm font-medium text-gray-500">Status</dt>
+        <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <% status_badge = case @alert.status
+                            when "active" then "bg-red-100 text-red-800"
+                            when "acknowledged" then "bg-yellow-100 text-yellow-800"
+                            else "bg-green-100 text-green-800"
+                            end %>
+          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= status_badge %>">
+            <%= @alert.status.humanize %>
+          </span>
+        </dd>
+      </div>
+      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm font-medium text-gray-500">Message</dt>
+        <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0"><%= @alert.message || "No additional details" %></dd>
+      </div>
+      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm font-medium text-gray-500">Triggered At</dt>
+        <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <%= @alert.triggered_at.strftime("%B %d, %Y at %H:%M UTC") %>
+          (<%= time_ago_in_words(@alert.triggered_at) %> ago)
+        </dd>
+      </div>
+      <% if @alert.metric_type.present? %>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Metric</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+            <%= @alert.metric_type.humanize %>
+            <% if @alert.threshold_value && @alert.actual_value %>
+              (threshold: <%= @alert.threshold_value %>%, actual: <%= @alert.actual_value %>%)
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+      <% if @alert.duration %>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Duration</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+            <%= distance_of_time_in_words(@alert.duration) %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  </div>
+</div>

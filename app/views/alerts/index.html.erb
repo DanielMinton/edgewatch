@@ -1,0 +1,74 @@
+<% content_for :title, "Alerts" %>
+
+<div class="sm:flex sm:items-center mb-8">
+  <div class="sm:flex-auto">
+    <h1 class="text-2xl font-bold text-gray-900">Alerts</h1>
+    <p class="mt-2 text-sm text-gray-700">View and manage alerts from your edge infrastructure.</p>
+  </div>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+  <% if @alerts.any? %>
+    <ul role="list" class="divide-y divide-gray-200">
+      <% @alerts.each do |alert| %>
+        <li class="px-4 py-5 sm:px-6 hover:bg-gray-50">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center min-w-0">
+              <% severity_bg = case alert.severity
+                               when "critical" then "bg-red-100"
+                               when "error" then "bg-orange-100"
+                               when "warning" then "bg-yellow-100"
+                               else "bg-blue-100"
+                               end %>
+              <% severity_text = case alert.severity
+                                 when "critical" then "text-red-600"
+                                 when "error" then "text-orange-600"
+                                 when "warning" then "text-yellow-600"
+                                 else "text-blue-600"
+                                 end %>
+              <div class="h-10 w-10 rounded-full <%= severity_bg %> flex items-center justify-center flex-shrink-0">
+                <svg class="h-5 w-5 <%= severity_text %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div class="ml-4 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <p class="text-sm font-medium text-gray-900 truncate"><%= alert.title %></p>
+                  <% status_class = case alert.status
+                                    when "active" then "bg-red-100 text-red-800"
+                                    when "acknowledged" then "bg-yellow-100 text-yellow-800"
+                                    else "bg-green-100 text-green-800"
+                                    end %>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium <%= status_class %>">
+                    <%= alert.status.humanize %>
+                  </span>
+                </div>
+                <p class="mt-1 text-sm text-gray-500 truncate"><%= alert.message %></p>
+                <p class="mt-1 text-xs text-gray-400">
+                  <%= link_to alert.edge_site.name, alert.edge_site, class: "hover:text-red-600" %> &middot;
+                  <%= time_ago_in_words(alert.triggered_at) %> ago
+                </p>
+              </div>
+            </div>
+            <div class="ml-4 flex items-center space-x-3 flex-shrink-0">
+              <% unless alert.is_resolved? %>
+                <% if alert.is_active? %>
+                  <%= button_to "Acknowledge", acknowledge_alert_path(alert), method: :patch, class: "text-sm font-medium text-yellow-600 hover:text-yellow-500" %>
+                <% end %>
+                <%= button_to "Resolve", resolve_alert_path(alert), method: :patch, class: "text-sm font-medium text-green-600 hover:text-green-500" %>
+              <% end %>
+            </div>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <div class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-semibold text-gray-900">No alerts</h3>
+      <p class="mt-1 text-sm text-gray-500">All systems are operating normally.</p>
+    </div>
+  <% end %>
+</div>
