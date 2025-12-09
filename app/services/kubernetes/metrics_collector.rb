@@ -234,18 +234,12 @@ module Kubernetes
     end
 
     def broadcast_updates
-      EdgeSiteChannel.broadcast_to(
-        edge_site,
-        turbo_stream.replace(
-          "edge_site_#{edge_site.id}",
-          partial: "dashboard/edge_site_card",
-          locals: { edge_site: edge_site.reload }
-        )
-      )
-    end
-
-    def turbo_stream
-      Turbo::Streams::TagBuilder.new(ApplicationController.helpers)
+      # Skip broadcasting for now - real-time updates require ActionCable setup
+      # EdgeSiteChannel.broadcast_to(edge_site, ...)
+      Rails.logger.info("[MetricsCollector] Skipping broadcast for #{edge_site.name}")
+    rescue StandardError => e
+      # Don't fail the whole collection if broadcast fails
+      Rails.logger.warn("[MetricsCollector] Broadcast failed: #{e.message}")
     end
   end
 end
