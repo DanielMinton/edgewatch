@@ -46,12 +46,8 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Use Redis for caching (if REDIS_URL is set), otherwise memory store
-  if ENV["REDIS_URL"].present?
-    config.cache_store = :redis_cache_store, { url: ENV["REDIS_URL"] }
-  else
-    config.cache_store = :memory_store
-  end
+  # Use memory store for caching
+  config.cache_store = :memory_store
 
   # Use Sidekiq for background jobs
   config.active_job.queue_adapter = :sidekiq
