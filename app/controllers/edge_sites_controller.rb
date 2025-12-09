@@ -1,5 +1,5 @@
 class EdgeSitesController < ApplicationController
-  before_action :set_edge_site, only: %i[show edit update destroy metrics]
+  before_action :set_edge_site, only: %i[show edit update destroy metrics collect_metrics]
 
   def index
     @edge_sites = EdgeSite.order(:name)
@@ -54,6 +54,20 @@ class EdgeSitesController < ApplicationController
       labels: @metrics.map { |m| m.recorded_at.strftime("%H:%M") },
       values: @metrics.map(&:value)
     }
+  end
+
+  def collect_metrics
+    begin
+      result = Kubernetes::MetricsCollector.new(@edge_site).call
+      if result.success
+        redirect_to @edge_site, notice: "Collected #{result.metrics.size} metrics successfully."
+      else
+        redirect_to @edge_site, alert: "Partial success: #{result.errors.join(', ')}"
+      end
+    rescue StandardError => e
+      Rails.logger.error("[EdgeSitesController] Metrics collection failed: #{e.message}")
+      redirect_to @edge_site, alert: "Failed to collect metrics: #{e.message}"
+    end
   end
 
   private
