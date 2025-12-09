@@ -1,0 +1,74 @@
+<div class="bg-white overflow-hidden shadow rounded-lg"
+     data-controller="chart refresh"
+     data-refresh-interval-value="30000"
+     data-edge-site-id="<%= edge_site.id %>">
+  <div class="p-5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <% status_color = case edge_site.status
+                          when "healthy" then "bg-green-400"
+                          when "degraded" then "bg-yellow-400"
+                          when "critical" then "bg-red-400"
+                          else "bg-gray-400"
+                          end %>
+        <div class="h-3 w-3 rounded-full <%= status_color %> animate-pulse"></div>
+        <h3 class="ml-3 text-lg font-medium text-gray-900"><%= edge_site.name %></h3>
+      </div>
+      <% badge_bg = case edge_site.status
+                    when "healthy" then "bg-green-100 text-green-800"
+                    when "degraded" then "bg-yellow-100 text-yellow-800"
+                    when "critical" then "bg-red-100 text-red-800"
+                    else "bg-gray-100 text-gray-800"
+                    end %>
+      <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= badge_bg %>">
+        <%= edge_site.status.humanize %>
+      </span>
+    </div>
+
+    <div class="mt-4">
+      <dl class="grid grid-cols-2 gap-4">
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Region</dt>
+          <dd class="mt-1 text-sm text-gray-900"><%= edge_site.region || "Not specified" %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Environment</dt>
+          <dd class="mt-1 text-sm text-gray-900"><%= edge_site.environment.humanize %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="mt-4 h-24" data-chart-target="canvas">
+      <canvas id="chart-<%= edge_site.id %>"
+              data-chart-endpoint="<%= metrics_edge_site_path(edge_site, type: "cpu_percent", format: :json) %>">
+      </canvas>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between text-sm">
+      <% if edge_site.last_seen_at %>
+        <span class="text-gray-500">
+          Last seen <%= time_ago_in_words(edge_site.last_seen_at) %> ago
+        </span>
+      <% else %>
+        <span class="text-gray-400">Never connected</span>
+      <% end %>
+
+      <%= link_to edge_site, class: "text-red-600 hover:text-red-500 font-medium" do %>
+        View Details
+      <% end %>
+    </div>
+  </div>
+
+  <% if edge_site.alerts.unresolved.any? %>
+    <div class="bg-red-50 px-5 py-3">
+      <div class="flex items-center">
+        <svg class="h-4 w-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span class="ml-2 text-sm text-red-700">
+          <%= pluralize(edge_site.alerts.unresolved.count, "active alert") %>
+        </span>
+      </div>
+    </div>
+  <% end %>
+</div>

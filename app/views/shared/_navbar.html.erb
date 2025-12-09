@@ -1,0 +1,31 @@
+<nav class="bg-gray-900">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex h-16 items-center justify-between">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div class="flex items-center space-x-2">
+            <div class="h-8 w-8 rounded bg-red-600 flex items-center justify-center">
+              <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <span class="text-white font-bold text-lg">EdgeWatch</span>
+          </div>
+        </div>
+        <div class="hidden md:block ml-10">
+          <div class="flex items-baseline space-x-4">
+            <%= link_to "Dashboard", root_path, class: "#{current_page?(root_path) ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} rounded-md px-3 py-2 text-sm font-medium" %>
+            <%= link_to "Edge Sites", edge_sites_path, class: "#{current_page?(edge_sites_path) ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} rounded-md px-3 py-2 text-sm font-medium" %>
+            <%= link_to "Alerts", alerts_path, class: "#{current_page?(alerts_path) ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} rounded-md px-3 py-2 text-sm font-medium" %>
+          </div>
+        </div>
+      </div>
+      <div class="hidden md:block">
+        <div class="flex items-center space-x-4">
+          <span class="text-gray-400 text-sm">Running on</span>
+          <span class="text-red-500 font-semibold text-sm">Red Hat OpenShift</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

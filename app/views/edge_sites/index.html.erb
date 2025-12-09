@@ -1,0 +1,68 @@
+<% content_for :title, "Edge Sites" %>
+
+<div class="sm:flex sm:items-center">
+  <div class="sm:flex-auto">
+    <h1 class="text-2xl font-bold text-gray-900">Edge Sites</h1>
+    <p class="mt-2 text-sm text-gray-700">Manage your registered edge infrastructure clusters.</p>
+  </div>
+  <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+    <%= link_to new_edge_site_path, class: "block rounded-md bg-red-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600" do %>
+      Register New Site
+    <% end %>
+  </div>
+</div>
+
+<div class="mt-8 flow-root">
+  <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+    <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+      <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Name</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Region</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Environment</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Last Seen</th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                <span class="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            <% @edge_sites.each do |edge_site| %>
+              <tr>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                  <%= link_to edge_site.name, edge_site, class: "hover:text-red-600" %>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><%= edge_site.region || "-" %></td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><%= edge_site.environment.humanize %></td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                  <% badge_class = case edge_site.status
+                                   when "healthy" then "bg-green-100 text-green-800"
+                                   when "degraded" then "bg-yellow-100 text-yellow-800"
+                                   when "critical" then "bg-red-100 text-red-800"
+                                   else "bg-gray-100 text-gray-800"
+                                   end %>
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= badge_class %>">
+                    <%= edge_site.status.humanize %>
+                  </span>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <% if edge_site.last_seen_at %>
+                    <%= time_ago_in_words(edge_site.last_seen_at) %> ago
+                  <% else %>
+                    Never
+                  <% end %>
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <%= link_to "Edit", edit_edge_site_path(edge_site), class: "text-red-600 hover:text-red-900" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
