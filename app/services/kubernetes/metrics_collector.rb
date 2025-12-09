@@ -12,8 +12,14 @@ module Kubernetes
       metrics = []
       recorded_at = Time.current
 
-      metrics.concat(collect_node_metrics(recorded_at))
-      metrics.concat(collect_pod_metrics(recorded_at))
+      if namespace_scoped?
+        # Sandbox/restricted access - only collect namespace-level metrics
+        metrics.concat(collect_namespace_pod_metrics(recorded_at))
+      else
+        # Full cluster access
+        metrics.concat(collect_node_metrics(recorded_at))
+        metrics.concat(collect_pod_metrics(recorded_at))
+      end
 
       persist_metrics(metrics) if metrics.any?
       update_site_status(metrics)
@@ -24,6 +30,10 @@ module Kubernetes
         metrics: metrics,
         errors: errors
       )
+    end
+
+    def namespace_scoped?
+      edge_site.namespace.present?
     end
 
     private
@@ -56,6 +66,68 @@ module Kubernetes
     rescue Kubeclient::HttpError => e
       errors << "Pod metrics unavailable: #{e.message}"
       []
+    end
+
+    def collect_namespace_pod_metrics(recorded_at)
+      namespace = edge_site.namespace
+      metrics = []
+
+      # Get pods in namespace using core API
+      begin
+        pods = factory.core_client.get_pods(namespace: namespace)
+        metrics << Metric.new(
+          edge_site: edge_site,
+          metric_type: "pod_count",
+          value: pods.size,
+          unit: "count",
+          recorded_at: recorded_at
+        )
+
+        # Count running vs not running pods
+        running_pods = pods.count { |p| p.status.phase == "Running" }
+        metrics << Metric.new(
+          edge_site: edge_site,
+          metric_type: "running_pods",
+          value: running_pods,
+          unit: "count",
+          recorded_at: recorded_at
+        )
+      rescue Kubeclient::HttpError => e
+        errors << "Pod list unavailable: #{e.message}"
+      end
+
+      # Try to get pod metrics from metrics API (may not be available in sandbox)
+      begin
+        pod_metrics = factory.metrics_client.get_pod_metrics(namespace: namespace)
+        pod_metrics.each do |pm|
+          pm.containers.each do |container|
+            cpu_nano = parse_cpu(container.usage.cpu)
+            memory_bytes = parse_memory(container.usage.memory)
+
+            metrics << Metric.new(
+              edge_site: edge_site,
+              metric_type: "cpu_millicores",
+              value: (cpu_nano / 1_000_000.0).round(2),
+              unit: "millicores",
+              node_name: "#{pm.metadata.name}/#{container.name}",
+              recorded_at: recorded_at
+            )
+
+            metrics << Metric.new(
+              edge_site: edge_site,
+              metric_type: "memory_mb",
+              value: (memory_bytes / (1024.0 * 1024.0)).round(2),
+              unit: "MB",
+              node_name: "#{pm.metadata.name}/#{container.name}",
+              recorded_at: recorded_at
+            )
+          end
+        end
+      rescue Kubeclient::HttpError => e
+        errors << "Pod metrics API unavailable: #{e.message}"
+      end
+
+      metrics
     end
 
     def build_node_metrics(node, recorded_at)
@@ -132,14 +204,31 @@ module Kubernetes
     def update_site_status(metrics)
       return edge_site.update!(status: :offline, last_seen_at: nil) if metrics.empty? && errors.any?
 
-      cpu_metrics = metrics.select { |m| m.metric_type == "cpu_percent" }
-      cpu_avg = cpu_metrics.any? ? cpu_metrics.sum(&:value) / cpu_metrics.size : 0
+      # For namespace-scoped sites, check pod health
+      if namespace_scoped?
+        pod_count = metrics.find { |m| m.metric_type == "pod_count" }&.value || 0
+        running_pods = metrics.find { |m| m.metric_type == "running_pods" }&.value || 0
 
-      new_status = case cpu_avg
-                   when 0..70 then :healthy
-                   when 70..85 then :degraded
-                   else :critical
-                   end
+        new_status = if pod_count == 0
+                       :healthy # No pods is normal for empty namespace
+                     elsif running_pods == pod_count
+                       :healthy
+                     elsif running_pods >= (pod_count * 0.7)
+                       :degraded
+                     else
+                       :critical
+                     end
+      else
+        # For cluster-level access, use CPU metrics
+        cpu_metrics = metrics.select { |m| m.metric_type == "cpu_percent" }
+        cpu_avg = cpu_metrics.any? ? cpu_metrics.sum(&:value) / cpu_metrics.size : 0
+
+        new_status = case cpu_avg
+                     when 0..70 then :healthy
+                     when 70..85 then :degraded
+                     else :critical
+                     end
+      end
 
       edge_site.update!(status: new_status, last_seen_at: Time.current)
     end
