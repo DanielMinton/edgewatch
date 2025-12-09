@@ -47,13 +47,9 @@ module Kubernetes
     end
 
     def ssl_options
-      {
-        verify_ssl: production? ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
-      }
-    end
-
-    def production?
-      Rails.env.production?
+      # Skip SSL verification for now - OpenShift uses its own CA
+      # TODO: Add option to provide custom CA certificate per edge site
+      { verify_ssl: OpenSSL::SSL::VERIFY_NONE }
     end
   end
 end
