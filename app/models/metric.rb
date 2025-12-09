@@ -1,7 +1,7 @@
 class Metric < ApplicationRecord
   belongs_to :edge_site, touch: true
 
-  TYPES = %w[cpu_percent memory_percent disk_percent network_rx network_tx pod_count node_count].freeze
+  TYPES = %w[cpu_percent memory_percent disk_percent network_rx network_tx pod_count node_count running_pods cpu_millicores memory_mb].freeze
 
   validates :metric_type, presence: true, inclusion: { in: TYPES }
   validates :value, presence: true, numericality: true

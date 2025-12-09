@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   resources :edge_sites do
     member do
       get :metrics
+      post :collect_metrics
     end
   end
   resources :alerts
