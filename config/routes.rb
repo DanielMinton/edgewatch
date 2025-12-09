@@ -14,6 +14,10 @@ Rails.application.routes.draw do
   root "dashboard#index"
 
   resources :dashboard, only: [:index]
-  resources :edge_sites
+  resources :edge_sites do
+    member do
+      get :metrics
+    end
+  end
   resources :alerts
 end
