@@ -8,11 +8,21 @@ module Kubernetes
     end
 
     def call
-      checks = {
-        api_reachable: check_api_connectivity,
-        nodes_ready: check_node_readiness,
-        metrics_available: check_metrics_availability
-      }
+      checks = if edge_site.namespace.present?
+        # Namespace-scoped checks for sandbox/restricted access
+        {
+          api_reachable: check_api_connectivity,
+          pods_healthy: check_pod_health,
+          deployments_ready: check_deployments
+        }
+      else
+        # Cluster-level checks for full access
+        {
+          api_reachable: check_api_connectivity,
+          nodes_ready: check_node_readiness,
+          metrics_available: check_metrics_availability
+        }
+      end
 
       healthy = checks.values.all? { |c| c[:ok] }
       status = determine_status(checks)
@@ -39,6 +49,44 @@ module Kubernetes
       { ok: true, message: "API server responding" }
     rescue StandardError => e
       { ok: false, message: "API unreachable: #{e.message}" }
+    end
+
+    def check_pod_health
+      namespace = edge_site.namespace
+      pods = factory.core_client.get_pods(namespace: namespace)
+      running_count = pods.count { |p| p.status.phase == "Running" }
+      total_count = pods.size
+
+      {
+        ok: total_count == 0 || running_count > 0,
+        message: "#{running_count}/#{total_count} pods running",
+        pod_count: total_count,
+        running_count: running_count
+      }
+    rescue StandardError => e
+      { ok: false, message: "Failed to check pods: #{e.message}" }
+    end
+
+    def check_deployments
+      namespace = edge_site.namespace
+      client = build_apps_client
+      deployments = client.get_deployments(namespace: namespace)
+
+      ready_count = deployments.count do |d|
+        available = d.status.availableReplicas || 0
+        desired = d.spec.replicas || 0
+        available >= desired && desired > 0
+      end
+      total_count = deployments.size
+
+      {
+        ok: total_count == 0 || ready_count == total_count,
+        message: "#{ready_count}/#{total_count} deployments ready",
+        deployment_count: total_count,
+        ready_count: ready_count
+      }
+    rescue StandardError => e
+      { ok: false, message: "Failed to check deployments: #{e.message}" }
     end
 
     def check_node_readiness
@@ -69,9 +117,27 @@ module Kubernetes
 
     def determine_status(checks)
       return :offline unless checks[:api_reachable][:ok]
-      return :critical unless checks[:nodes_ready][:ok]
-      return :degraded unless checks[:metrics_available][:ok]
+
+      if checks[:nodes_ready]
+        return :critical unless checks[:nodes_ready][:ok]
+        return :degraded unless checks[:metrics_available][:ok]
+      else
+        return :critical unless checks[:pods_healthy][:ok]
+        return :degraded unless checks[:deployments_ready][:ok]
+      end
+
       :healthy
+    end
+
+    def build_apps_client
+      base = edge_site.api_endpoint.chomp("/")
+      Kubeclient::Client.new(
+        "#{base}/apis/apps",
+        "v1",
+        auth_options: { bearer_token: edge_site.api_token },
+        ssl_options: { verify_ssl: Rails.env.production? ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE },
+        timeouts: { open: 5, read: 30 }
+      )
     end
   end
 end
