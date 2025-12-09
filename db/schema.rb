@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_09_031341) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_09_073931) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -44,6 +44,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_031341) do
     t.datetime "last_seen_at"
     t.jsonb "metadata", default: {}
     t.string "name", null: false
+    t.string "namespace"
     t.string "region"
     t.string "slug", null: false
     t.integer "status", default: 0

@@ -44,6 +44,14 @@
     <p class="mt-2 text-sm text-gray-500">Bearer token for authentication with the cluster</p>
   </div>
 
+  <div>
+    <%= form.label :namespace, "Namespace (for sandbox/restricted access)", class: "block text-sm font-medium leading-6 text-gray-900" %>
+    <div class="mt-2">
+      <%= form.text_field :namespace, class: "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6", placeholder: "danielminton-dev" %>
+    </div>
+    <p class="mt-2 text-sm text-gray-500">Leave blank for full cluster access, or enter your namespace for sandbox environments</p>
+  </div>
+
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
     <div>
       <%= form.label :region, class: "block text-sm font-medium leading-6 text-gray-900" %>

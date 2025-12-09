@@ -59,6 +59,6 @@ class EdgeSitesController < ApplicationController
   end
 
   def edge_site_params
-    params.require(:edge_site).permit(:name, :api_endpoint, :api_token, :region, :environment)
+    params.require(:edge_site).permit(:name, :api_endpoint, :api_token, :namespace, :region, :environment)
   end
 end
