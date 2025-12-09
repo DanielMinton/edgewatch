@@ -21,7 +21,11 @@ class EdgeSitesController < ApplicationController
     @edge_site = EdgeSite.new(edge_site_params)
 
     if @edge_site.save
-      CollectMetricsJob.perform_later(@edge_site.id)
+      begin
+        CollectMetricsJob.perform_later(@edge_site.id)
+      rescue StandardError => e
+        Rails.logger.warn("[EdgeSitesController] Failed to queue metrics job: #{e.message}")
+      end
       redirect_to @edge_site, notice: "Edge site registered successfully."
     else
       render :new, status: :unprocessable_entity

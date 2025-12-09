@@ -49,8 +49,8 @@ Rails.application.configure do
   # Use memory store for caching
   config.cache_store = :memory_store
 
-  # Use Sidekiq for background jobs
-  config.active_job.queue_adapter = :sidekiq
+  # Use async for background jobs (switch to :sidekiq when Redis is available)
+  config.active_job.queue_adapter = :async
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
