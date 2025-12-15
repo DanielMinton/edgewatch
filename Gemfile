@@ -7,7 +7,7 @@ gem "propshaft"
 gem "pg", "~> 1.5"
 gem "puma", ">= 6.0"
 gem "redis", "~> 5.0"
-gem "sidekiq", "~> 7.2"
+gem "sidekiq", "~> 8.1"
 
 gem "importmap-rails"
 gem "turbo-rails"
